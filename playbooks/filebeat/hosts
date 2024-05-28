@@ -1,0 +1,7 @@
+[oraclelinux-servers]
+ansible-oracle-managed-node-1 ansible_python_interpreter=/usr/bin/python2 source_filebeat_yml=yamls/oracle1.yml
+ansible-oracle-managed-node-2 ansible_python_interpreter=/usr/bin/python2 source_filebeat_yml=yamls/oracle2.yml
+
+[ubuntu-servers]
+ansible-ubuntu-managed-node-1 ansible_python_interpreter=/usr/bin/python3 source_filebeat_yml=yamls/ubuntu1.yml
+ansible-ubuntu-managed-node-2 ansible_python_interpreter=/usr/bin/python3 source_filebeat_yml=yamls/ubuntu2.yml

@@ -1,0 +1,30 @@
+---
+- name: Uninstall Filebeat
+  hosts: oraclelinux-servers
+  become: yes  # Enables sudo privileges
+  tasks:
+    - name: Check if Filebeat is installed
+      command: rpm -q filebeat
+      register: filebeat_check
+      ignore_errors: yes  # Ignore errors if the package is not installed
+
+    - name: Display Filebeat Installation Status
+      debug:
+        var: filebeat_check.stdout
+
+    - name: Stop Filebeat service if running
+      service:
+        name: filebeat
+        state: stopped
+      when: filebeat_check.rc == 0
+
+    - name: Uninstall Filebeat using yum
+      command: yum remove -y filebeat
+      register: yum_removal_result
+      when: filebeat_check.rc == 0
+
+    - name: Remove Filebeat configuration files
+      file:
+        path: "/etc/filebeat/"
+        state: absent
+      when: (filebeat_check.rc == 0 and yum_removal_result.rc == 0)

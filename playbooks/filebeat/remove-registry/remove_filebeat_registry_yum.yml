@@ -1,0 +1,21 @@
+---
+- name: Remove Filebeat Registry
+  hosts: oraclelinux-servers
+  become: yes  # Enables sudo privileges
+  tasks:
+    - name: Check if Filebeat is installed
+      command: rpm -q filebeat
+      register: filebeat_check
+      ignore_errors: yes  # Ignore errors if the package is not installed
+
+    - name: Display Filebeat Installation Status
+      debug:
+        var: filebeat_check.stdout
+
+    - name: Remove Filebeat Registry
+      command: rm -rf /var/lib/filebeat/registry
+      when: filebeat_check.rc == 0  # Only run this task if Filebeat is installed
+
+    - name: Restart Filebeat Service
+      command: systemctl restart filebeat.service
+      when: filebeat_check.rc == 0  # Only run this task if Filebeat is installed

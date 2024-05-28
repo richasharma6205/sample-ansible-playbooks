@@ -1,0 +1,9 @@
+users:
+  - username: operator
+    uid: 1001
+    groups: users
+    password: 98bdb81b7c84cc5da44d82afe0f4ffc71004e4fad4d38ebcfde6ef40b90b3f93e1b4c59440a39dab5e52202f78aec28625142c9896a8d6467f276f9ac6476c52
+  - username: supervisor
+    uid: 1002
+    groups: users
+    password: 98bdb81b7c84cc5da44d82afe0f4ffc71004e4fad4d38ebcfde6ef40b90b3f93e1b4c59440a39dab5e52202f78aec28625142c9896a8d6467f276f9ac6476c52

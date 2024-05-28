@@ -1,0 +1,23 @@
+---
+- name: Remove Filebeat Registry
+  hosts: oraclelinux-servers
+  become: yes  # Enables sudo privileges
+  tasks:
+    - name: Check if Filebeat is installed
+      become: yes
+      command: dpkg-query -W -f='${Status}' filebeat
+      register: filebeat_status
+      changed_when: false  # Treat the task as not changed, regardless of the result
+      ignore_errors: true  # Ignore errors if the package is not installed
+
+    - name: Display Filebeat Installation Status
+      debug:
+        var: filebeat_status.stdout
+
+    - name: Remove Filebeat Registry
+      command: rm -rf /var/lib/filebeat/registry
+      when: filebeat_status.failed  # Only run if Filebeat is not installed
+
+    - name: Restart Filebeat Service
+      command: systemctl restart filebeat.service
+      when: filebeat_status.failed  # Only run if Filebeat is not installed

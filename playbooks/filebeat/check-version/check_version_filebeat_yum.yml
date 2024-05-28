@@ -1,0 +1,13 @@
+---
+- name: Dispaly Filebeat version
+  hosts: oraclelinux-servers
+  become: yes  # Enables sudo privileges
+  tasks:
+    - name: Check if Filebeat is installed
+      command: rpm -q filebeat
+      register: filebeat_check
+      ignore_errors: yes  # Ignore errors if the package is not installed
+
+    - name: Display Filebeat Installation Status
+      debug:
+        var: filebeat_check.stdout

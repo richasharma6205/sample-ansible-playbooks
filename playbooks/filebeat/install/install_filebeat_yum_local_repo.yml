@@ -1,0 +1,47 @@
+---
+- name: Download and Install Filebeat 7.8.0 using local repository
+  hosts: oraclelinux-servers
+  gather_facts: yes
+  become: yes  # Use sudo to install
+  tasks:
+    - name: Check if Filebeat is installed
+      command: rpm -q filebeat
+      register: filebeat_check
+      ignore_errors: yes  # Ignore errors if the package is not installed
+
+    - name: Display Filebeat Installation Status
+      debug:
+        var: filebeat_check.stdout
+
+    - name: Create Local Repository Directory
+      file:
+        path: /opt/local-repo
+        state: directory
+      delegate_to: localhost
+      when: filebeat_check.rc != 0  # Only create the directory if Filebeat is not installed
+
+    - name: Download Filebeat 7.8.0 RPM to Local Repository
+      get_url:
+        url: https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-7.8.0-x86_64.rpm
+        dest: /opt/local-repo/filebeat-7.8.0-x86_64.rpm
+        mode: 0644
+      register: filebeat_download
+      delegate_to: localhost
+      when: filebeat_check.rc != 0  # Only download if Filebeat is not installed
+
+    - name: Copy Filebeat RPM to Remote Node
+      copy:
+        src: /opt/local-repo/filebeat-7.8.0-x86_64.rpm
+        dest: /tmp/filebeat-7.8.0-x86_64.rpm
+      when: filebeat_check.rc != 0  # Only copy if Filebeat is not installed
+
+    - name: Install Filebeat 7.8.0 from Local Repository
+      command: rpm -i /tmp/filebeat-7.8.0-x86_64.rpm
+      become: yes
+      when: filebeat_check.rc != 0  # Only install if Filebeat is not installed
+
+    - name: Ensure Filebeat service is enabled and running
+      service:
+        name: filebeat
+        enabled: yes
+        state: started

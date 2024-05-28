@@ -1,0 +1,51 @@
+---
+- name: Download and Install Filebeat 7.8.0 using local repository
+  hosts: ubuntu-servers
+  gather_facts: yes
+  become: yes  # Use sudo to install
+  tasks:
+    - name: Check if Filebeat is installed
+      become: yes
+      command: dpkg-query -W -f='${Status}' filebeat
+      register: filebeat_status
+      changed_when: false  # Treat the task as not changed, regardless of the result
+      ignore_errors: true  # Ignore errors if the package is not installed
+
+    - name: Display Filebeat status
+      debug:
+        msg: "{{ 'Filebeat is installed' if filebeat_status.stdout is search('install ok installed') else 'Filebeat is not installed' }}"
+
+    - name: Create Local Repository Directory
+      file:
+        path: /opt/local-repo
+        state: directory
+      delegate_to: localhost
+      when: filebeat_status.failed  # Only run if Filebeat is not installed
+
+    - name: Download Filebeat 7.8.0 to Local Repository
+      get_url:
+        url: https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-7.8.0-amd64.deb
+        dest: /opt/local-repo/filebeat-7.8.0-amd64.deb
+        mode: 0644
+      register: filebeat_download
+      delegate_to: localhost
+      when: filebeat_status.failed  # Only run if Filebeat is not installed
+
+    - name: Copy Filebeat RPM to Remote Node
+      copy:
+        src: /opt/local-repo/filebeat-7.8.0-amd64.deb
+        dest: /tmp/filebeat-7.8.0-amd64.deb
+      when: filebeat_status.failed  # Only run if Filebeat is not installed
+
+    - name: Install Filebeat 7.8.0
+      apt:
+        deb: /tmp/filebeat-7.8.0-amd64.deb
+        state: present
+      when: filebeat_status.failed  # Only run if Filebeat is not installed
+
+    - name: Ensure Filebeat service is enabled and running
+      service:
+        name: filebeat
+        enabled: yes
+        state: started
+      when: filebeat_status.failed  # Only run if Filebeat is not installed

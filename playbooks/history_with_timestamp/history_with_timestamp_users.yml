@@ -1,0 +1,51 @@
+---
+- name: Enable timestamp in .bash_history for root user
+  hosts: oraclelinux-servers
+  become: yes
+  vars_files:
+    - var_users.yml
+
+  tasks:
+    - name: Check if .bashrc exists in user folder
+      stat:
+        path: "/home/{{ item }}/.bashrc"
+      with_items: "{{ users }}"
+      register: bashrc_exists
+      ignore_errors: yes
+
+    - name: Print if .bashrc does not exist
+      debug:
+        msg: "/home/{{ item }}/.bashrc does not exist"
+      with_items: "{{ users }}"
+      loop_control:
+        index_var: index
+      when: not bashrc_exists.results[index].stat.exists
+
+    - name: Check if export HISTTIMEFORMAT exists in user's .bashrc
+      command: 'grep "export HISTTIMEFORMAT=" /home/{{ item }}/.bashrc'
+      with_items: "{{ users }}"
+      loop_control:
+        index_var: index
+      register: timestamp_exists
+      ignore_errors: yes
+      when: bashrc_exists.results[index].stat.exists
+
+    - name: Append content to user's .bashrc
+      shell: echo "export HISTTIMEFORMAT=\"%F %T \"" >> /home/{{ item }}/.bashrc
+      with_items: "{{ users }}"
+      loop_control:
+        index_var: index
+      when:
+        - bashrc_exists.results[index].stat.exists
+        - timestamp_exists is defined
+        - timestamp_exists.results[index].stdout == ''
+
+    - name: Execute source user's .bashrc
+      shell: source /home/{{ item }}/.bashrc
+      with_items: "{{ users }}"
+      loop_control:
+        index_var: index
+      when:
+        - bashrc_exists.results[index].stat.exists
+        - timestamp_exists is defined
+        - timestamp_exists.results[index].stdout == ''

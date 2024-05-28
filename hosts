@@ -1,0 +1,6 @@
+[all_servers]
+ansible-oracle-managed-node-1 ansible_python_interpreter=/usr/bin/python2
+ansible-oracle-managed-node-2 ansible_python_interpreter=/usr/bin/python2
+
+ansible-ubuntu-managed-node-1 ansible_python_interpreter=/usr/bin/python3
+# ansible-ubuntu-managed-node-2 ansible_python_interpreter=/usr/bin/python3

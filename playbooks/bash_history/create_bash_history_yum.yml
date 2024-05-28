@@ -1,0 +1,45 @@
+---
+- name: Create .bash_history file for multiple users
+  hosts: oraclelinux-servers
+  become: yes
+  gather_facts: no
+  vars_files:
+    - var_users.yml
+
+  tasks:
+    - name: Check if user folders exist
+      stat:
+        path: "/home/{{ item }}"
+      with_items: "{{ users }}"
+      register: folder_exists
+      loop_control:
+        index_var: index
+
+    - name: Check if .bash_history exists in user folders
+      stat:
+        path: "/home/{{ item }}/.bash_history"
+      with_items: "{{ users }}"
+      register: bash_history_exists
+      loop_control:
+        index_var: index
+      when: folder_exists.results[index].stat.exists
+
+    - name: Create .bash_history in user folders
+      file:
+        path: "/home/{{ item }}/.bash_history"
+        state: touch
+      with_items: "{{ users }}"
+      loop_control:
+        index_var: index
+      when: not bash_history_exists.results[index].stat.exists
+
+    - name: Set permissions for .bash_history
+      file:
+        path: "/home/{{ item }}/.bash_history"
+        owner: "{{ item }}"  # Set the owner to the user
+        group: "{{ item }}"  # Set the group to the user
+        mode: "0755"  # Set permissions
+      with_items: "{{ users }}"
+      loop_control:
+        index_var: index
+      when: not bash_history_exists.results[index].stat.exists

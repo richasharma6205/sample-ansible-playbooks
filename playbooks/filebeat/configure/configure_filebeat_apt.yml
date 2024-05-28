@@ -1,0 +1,54 @@
+---
+- name: Configure Filebeat on all servers
+  hosts: ubuntu-servers
+  become: yes
+  gather_facts: no
+
+  tasks:
+    - name: Check if Filebeat is installed
+      command: dpkg-query -W -f='${Status}' filebeat
+      register: filebeat_status
+      ignore_errors: yes  # Ignore errors if the package is not installed
+
+    - name: Display filebeat yaml files present in control node
+      debug:
+        var: source_filebeat_yml
+      when: not filebeat_status.failed
+
+    - name: Display Filebeat Installation Status
+      debug:
+        msg: "{{ 'Filebeat is installed' if filebeat_status.stdout is search('install ok installed') else 'Filebeat is not installed' }}"
+
+    - name: Ensure the temp directory exists
+      file:
+        path: /tmp/ansible-temp
+        state: directory
+      when: not filebeat_status.failed
+
+    - name: Copy filebeat.yml from to remote node
+      copy:
+        src: "{{ source_filebeat_yml }}"
+        dest: /tmp/ansible-temp/filebeat.yml
+      when: not filebeat_status.failed
+
+    - name: Empty /etc/filebeat/filebeat.yml
+      shell: echo '' > /etc/filebeat/filebeat.yml
+      ignore_errors: yes  # This allows the playbook to continue even if a task fails
+      register: empty_file_result
+      when: not filebeat_status.failed
+
+    - name: Set a default value for empty_file_result if undefined
+      set_fact:
+        empty_file_result: {}
+      silent: yes
+      when: empty_file_result is undefined
+
+    - name: Append content to /etc/filebeat/filebeat.yml
+      shell: cat /tmp/ansible-temp/filebeat.yml >> /etc/filebeat/filebeat.yml
+      when: not filebeat_status.failed and not empty_file_result.failed
+
+    - name: Delete temp file
+      file:
+        path: /tmp/ansible-temp/filebeat.yml
+        state: absent
+      when: not filebeat_status.failed

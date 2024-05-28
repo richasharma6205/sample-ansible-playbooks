@@ -1,0 +1,23 @@
+---
+- name: Enable timestamp in .bash_history for root user
+  hosts: oraclelinux-servers
+  become: yes
+
+  tasks:
+    - name: Check if 'export HISTTIMEFORMAT' exists
+      command: 'grep "export HISTTIMEFORMAT=" ~/.bashrc'
+      register: timestamp_exists
+      ignore_errors: yes
+
+    - name: Print if 'export HISTTIMEFORMAT' exists
+      debug:
+        msg: "'{{ timestamp_exists.stdout }}'"
+      when: timestamp_exists.stdout != ''
+
+    - name: Append content to ~/.bashrc
+      shell: echo "export HISTTIMEFORMAT=\"%F %T \"" >> ~/.bashrc
+      when: timestamp_exists.stdout == ''
+
+    - name: Execute source ~/.bashrc
+      shell: source ~/.bashrc
+      when: timestamp_exists.stdout == ''
